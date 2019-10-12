@@ -11,7 +11,6 @@
 
 //Includes
 #include <wiringPi.h>
-#include <wiringPiI2C.h>
 #include <wiringPiSPI.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,13 +38,6 @@
 //SPI Settings               
 #define SPI_CHAN 0
 #define SPI_SPEED 12500000
-
-//define Constants
-const char RTCAddr = 0x6f;
-const char SEC = 0x00; 
-const char MIN = 0x01;
-const char HOUR = 0x02;
-const char TIMEZONE = 2;    // +02H00 (RSA)
 
 //Function definitions
 void initGPIO(void);
