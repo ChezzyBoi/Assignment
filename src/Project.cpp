@@ -14,6 +14,16 @@ long lastInterruptTime = 0;     //Used for button debounce
 bool monitoring = true;         //Boolean to State if Sensors are Monitoring
 bool alarmed = false;           //Boolean to State if the Alarm is Sounding
 int frequency = 1;              //Frequency of the monitoring in seconds
+int RTCTimeHour;
+int RTCTimeMinute;
+int RTCTimeSecond;
+int startTimeHour;
+int startTimeMinute;
+int startTimeSecond;
+int systemTimeHour;
+int systemTimeMinute;
+int systemTimeSecond;
+String alarm = "";
 
 void initGPIO(void)
 {
@@ -66,7 +76,8 @@ void stopAlarm(void)
 	{
 		if (alarmed == true)
 		{
-			alarmed == false;
+			alarmed = false;
+            alarm = "";
 			ALARM_SIGNAL = 0;
 		}
     }
@@ -79,7 +90,7 @@ void resetTime(void)
     if (interruptTime - lastInterruptTime > 200)
 	{
 		system("@cls||clear");
-        //systemTime 
+        setStarTime(); 
     }
 	lastInterruptTime = interruptTime;
 }
@@ -112,20 +123,26 @@ void changeReadInterval(void)
 int main(void)
 {
 	initGPIO();
-    toggleTime();
+    setStarTime();
     delay(1000);
+    
+    printf("|RTC Time|Sys Timer|Humidity|Temp|Light|DAC out|Alarm|"); //print the headings of the output table
 
     // Repeat this until we shut down
 	for (;;)
     {
         if (monitoring)
         {
-            //Print The System Time and The RTC Time
-		
+            toggleTime();
+            //get the other readings, DAC out = (Light/1023) * Humidity
+            //trigger alarm if needed and if alarm wasnt triggered 3 mins ago
+            
+            //Print The info to the Table
+            printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V0, RTCTime);       //Display RTC Time on Blynk
-		
+            printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V1, systemTime);    //Display System Time on Blynk
-            delay(frequency*1000);
+            delay(frequency*1000);                   //Monitoring frequency, wait 1, 2 or 5 seconds 
         }
 	}
 	return 0;
@@ -134,6 +151,7 @@ int main(void)
 void soundAlarm()
 {
 	alarmed = true;
+    alarm = "*"
 	softPwmCreate(ALARM_SIGNAL, 0, 2);  
 }
 
@@ -175,8 +193,37 @@ void toggleTime(void)
 	long interruptTime = millis();
 
 	if (interruptTime - lastInterruptTime>200)
-    {
-
+    {   
+        time_t rawtime;
+        struct tm * timeinfo;
+        time (  &rawtime);
+        timeinfo = localtime (  &rawtime);
+        
+        RTCTimeHour = timeinfo->tm_hour; 
+        RTCTimeMinute = timeinfo->tm_min;
+        RTCTimeSecond = timeinfo->tm_sec;
+        
+        systemTimeHour = RTCTimeHour - startTimeHour;
+        systemTimeMinute = RTCTimeMinute - startTimeMinute;
+        systemTimeSecond = RTCTimeSecond - startTimeSecond;
 	}
 	lastInterruptTime = interruptTime;
+}
+
+void setStarTime(void)
+{
+	long interruptTime = millis();
+
+	if (interruptTime - lastInterruptTime>200)
+    {   
+        time_t rawtime;
+        struct tm * timeinfo;
+        time (  &rawtime);
+        timeinfo = localtime (  &rawtime);
+        
+        startTimeHour = timeinfo->tm_hour; 
+        startTimeMinute = timeinfo->tm_min;
+        startTimeSecond = timeinfo->tm_sec;
+	}
+	lastInterruptTime = interruptTime;    
 }
