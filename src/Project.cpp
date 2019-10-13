@@ -23,6 +23,12 @@ int startTimeSecond;
 int systemTimeHour;
 int systemTimeMinute;
 int systemTimeSecond;
+int temperature;
+int humidty;
+int light;
+int DAC_out;
+int lastAlarm = 369;   //random amount higher than 3 minutes
+
 String alarm = "";
 
 void initGPIO(void)
@@ -32,6 +38,7 @@ void initGPIO(void)
 	
 	//Setting Up The SPI Interface
 	wiringPiSetup(SPI_CHAN, SPI_SPEED);
+    mcp3004Setup (BASE, SPI_CHAN);
 
 	//Setting Up The Buttons
 	//Stop/Start Monitoring Button
@@ -134,13 +141,30 @@ int main(void)
         if (monitoring)
         {
             toggleTime();
-            //get the other readings, DAC out = (Light/1023) * Humidity
-            //trigger alarm if needed and if alarm wasnt triggered 3 mins ago
+            //Get the data readings
+            int humidty = analogRead(BASE + HUMID);
+            int light =  analogRead(BASE + LIGHT);
+            int temperature = analogRead(BASE + TEMP);
+            DAC_out = (light/1023)*humidty;
             
+            //Convert the temperature to a value in degrees celcuis
+            
+            
+            //trigger alarm if above or below threshold and if alarm wasnt triggered 3 mins ago
+            if (DAC_out<0.65 || DAC_out>2.65)
+            {
+                if (lastAlarm > 180)  //3 minutes = 180 seconds
+                {
+                    soundAlarm();
+                }
+            }
+            
+            lastAlarm = lastAlarm + frequency;  //increase by frequency seconds after each read since that will be how many seconds has passed
+      
             //Print The info to the Table
-            printf("The current time is: %x:%x:%x\n", hours, mins, secs);
+            //printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V0, RTCTime);       //Display RTC Time on Blynk
-            printf("The current time is: %x:%x:%x\n", hours, mins, secs);
+            //printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V1, systemTime);    //Display System Time on Blynk
             delay(frequency*1000);                   //Monitoring frequency, wait 1, 2 or 5 seconds 
         }
@@ -153,6 +177,7 @@ void soundAlarm()
 	alarmed = true;
     alarm = "*"
 	softPwmCreate(ALARM_SIGNAL, 0, 2);  
+    lastAlarm = 0;
 }
 
 /*
