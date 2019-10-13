@@ -2,14 +2,14 @@
  * Project.cpp
  * Modified for EEE3095S/EEE3096S
  * September 2019
- * 
+ *
  * WLLCHE013 & PHHPET001
  * 25 September 2019
 */
 
 #include "Project.h"
 
-//Global variables       
+//Global variables
 long lastInterruptTime = 0;     //Used for button debounce
 bool monitoring = true;         //Boolean to State if Sensors are Monitoring
 bool alarmed = false;           //Boolean to State if the Alarm is Sounding
@@ -34,8 +34,8 @@ String alarm = "";
 void initGPIO(void)
 {
 	//Set Up Wiring Pi
-	wiringPiSetup(); 
-	
+	wiringPiSetup();
+
 	//Setting Up The SPI Interface
 	wiringPiSetup(SPI_CHAN, SPI_SPEED);
     mcp3004Setup (BASE, SPI_CHAN);
@@ -43,20 +43,20 @@ void initGPIO(void)
 	//Setting Up The Buttons
 	//Stop/Start Monitoring Button
 	pinMode(MONITOR_BUTTON, INPUT);                         //Set button to input mode
-	pullUpDnControl(MONITOR_BUTTON, PUP_UP);                //Set up pull-up resistor 
+	pullUpDnControl(MONITOR_BUTTON, PUP_UP);                //Set up pull-up resistor
 	wiringPiISR(MONITOR_BUTTON, INT_EDGE_FALLING, monitor); //Attach Interrupt to button
-	//Dismiss Alarm Button                                      
+	//Dismiss Alarm Button
 	pinMode(ALARM_BUTTON, INPUT);                           //Set button to input mode
-	pullUpDnControl(ALARM_BUTTON, PUP_UP);                  //Set up pull-up resistor 
+	pullUpDnControl(ALARM_BUTTON, PUP_UP);                  //Set up pull-up resistor
 	wiringPiISR(ALARM_BUTTON, INT_EDGE_FALLING, stopAlarm); //Attach Interrupt to button
-	//Reset System Time and Clear Concole Button 
+	//Reset System Time and Clear Concole Button
 	pinMode(RESET_BUTTON, INPUT);                           //Set button to input mode
-	pullUpDnControl(RESET_BUTTON, PUP_UP);                  //Set up pull-up resistor 
+	pullUpDnControl(RESET_BUTTON, PUP_UP);                  //Set up pull-up resistor
 	wiringPiISR(RESET_BUTTON, INT_EDGE_FALLING, resetTime); //Attach Interrupt to button
-	//Change Reading Interval Button  
+	//Change Reading Interval Button
 	pinMode(INTERVAL_BUTTON, INPUT);                                    //Set button to input mode
-	pullUpDnControl(INTERVAL_BUTTON, PUP_UP);                           //Set up pull-up resistor 
-	wiringPiISR(INTERVAL_BUTTON, INT_EDGE_FALLING, changeReadInterval); //Attach Interrupt to button 
+	pullUpDnControl(INTERVAL_BUTTON, PUP_UP);                           //Set up pull-up resistor
+	wiringPiISR(INTERVAL_BUTTON, INT_EDGE_FALLING, changeReadInterval); //Attach Interrupt to button
 }
 
 void monitor(void)
@@ -88,7 +88,7 @@ void stopAlarm(void)
 			ALARM_SIGNAL = 0;
 		}
     }
-	lastInterruptTime = interruptTime;	
+	lastInterruptTime = interruptTime;
 }
 
 void resetTime(void)
@@ -97,7 +97,7 @@ void resetTime(void)
     if (interruptTime - lastInterruptTime > 200)
 	{
 		system("@cls||clear");
-        setStarTime(); 
+        setStarTime();
     }
 	lastInterruptTime = interruptTime;
 }
@@ -115,7 +115,7 @@ void changeReadInterval(void)
 		{
 			frequency = 5;
 		}
-		if (frequency == 5) 
+		if (frequency == 5)
 		{
 			frequency = 1;
 		}
@@ -131,8 +131,7 @@ int main(void)
 {
 	initGPIO();
     setStarTime();
-    delay(1000);
-    
+
     printf("|RTC Time|Sys Timer|Humidity|Temp|Light|DAC out|Alarm|"); //print the headings of the output table
 
     // Repeat this until we shut down
@@ -141,15 +140,16 @@ int main(void)
         if (monitoring)
         {
             toggleTime();
+
             //Get the data readings
             int humidty = analogRead(BASE + HUMID);
             int light =  analogRead(BASE + LIGHT);
             int temperature = analogRead(BASE + TEMP);
             DAC_out = (light/1023)*humidty;
-            
+
             //Convert the temperature to a value in degrees celcuis
-            
-            
+
+
             //trigger alarm if above or below threshold and if alarm wasnt triggered 3 mins ago
             if (DAC_out<0.65 || DAC_out>2.65)
             {
@@ -158,15 +158,15 @@ int main(void)
                     soundAlarm();
                 }
             }
-            
+
             lastAlarm = lastAlarm + frequency;  //increase by frequency seconds after each read since that will be how many seconds has passed
-      
+
             //Print The info to the Table
             //printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V0, RTCTime);       //Display RTC Time on Blynk
             //printf("The current time is: %x:%x:%x\n", hours, mins, secs);
             //Blynk.virtualWrite(V1, systemTime);    //Display System Time on Blynk
-            delay(frequency*1000);                   //Monitoring frequency, wait 1, 2 or 5 seconds 
+            delay(frequency*1000);                   //Monitoring frequency, wait 1, 2 or 5 seconds
         }
 	}
 	return 0;
@@ -176,7 +176,7 @@ void soundAlarm()
 {
 	alarmed = true;
     alarm = "*"
-	softPwmCreate(ALARM_SIGNAL, 0, 2);  
+	softPwmCreate(ALARM_SIGNAL, 0, 2);
     lastAlarm = 0;
 }
 
@@ -218,16 +218,16 @@ void toggleTime(void)
 	long interruptTime = millis();
 
 	if (interruptTime - lastInterruptTime>200)
-    {   
+    {
         time_t rawtime;
         struct tm * timeinfo;
         time (  &rawtime);
         timeinfo = localtime (  &rawtime);
-        
-        RTCTimeHour = timeinfo->tm_hour; 
+
+        RTCTimeHour = timeinfo->tm_hour;
         RTCTimeMinute = timeinfo->tm_min;
         RTCTimeSecond = timeinfo->tm_sec;
-        
+
         systemTimeHour = RTCTimeHour - startTimeHour;
         systemTimeMinute = RTCTimeMinute - startTimeMinute;
         systemTimeSecond = RTCTimeSecond - startTimeSecond;
@@ -240,15 +240,15 @@ void setStarTime(void)
 	long interruptTime = millis();
 
 	if (interruptTime - lastInterruptTime>200)
-    {   
+    {
         time_t rawtime;
         struct tm * timeinfo;
         time (  &rawtime);
         timeinfo = localtime (  &rawtime);
-        
-        startTimeHour = timeinfo->tm_hour; 
+
+        startTimeHour = timeinfo->tm_hour;
         startTimeMinute = timeinfo->tm_min;
         startTimeSecond = timeinfo->tm_sec;
 	}
-	lastInterruptTime = interruptTime;    
+	lastInterruptTime = interruptTime;
 }
