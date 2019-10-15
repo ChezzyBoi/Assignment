@@ -14,4 +14,4 @@ run:
     sudo ./bin/Project
 
 clean:
-rm $(PROG) $(OBJS)
+    rm $(PROG) $(OBJS)
